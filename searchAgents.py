@@ -40,6 +40,9 @@ from game import Actions
 import util
 import time
 import search
+from util import manhattanDistance
+from search import *
+
 
 class GoWestAgent(Agent):
     "An agent that goes West until it can't."
@@ -295,6 +298,14 @@ class CornersProblem(search.SearchProblem):
         space)
         """
         "*** YOUR CODE HERE ***"
+        # Initializing the starting position 
+        initialPosition =self.startingPosition
+
+        # To keep track of Corners that are explored we store them in Explored Corners
+        exploredCorners= set()
+
+        # returning the initialPosition and exploredCorners(empty when start)
+        return (initialPosition,exploredCorners)
         util.raiseNotDefined()
 
     def isGoalState(self, state):
@@ -302,6 +313,15 @@ class CornersProblem(search.SearchProblem):
         Returns whether this search state is a goal state of the problem.
         """
         "*** YOUR CODE HERE ***"
+        # Goal State: It is when Pacman reaches all the corners of the given Maze
+        # We check if exploredCorners have all the corners of the maze i.e all of self.corners
+        exploredCorners=state[1]
+        allCorners=self.corners
+        if len(exploredCorners)==len(allCorners):
+            return True  # returns True when all the Corners are explored i.e Goal state reached
+        else:
+            return False  # returns False when there are Corners left to be explored
+        
         util.raiseNotDefined()
 
     def getSuccessors(self, state):
@@ -314,20 +334,36 @@ class CornersProblem(search.SearchProblem):
             state, 'action' is the action required to get there, and 'stepCost'
             is the incremental cost of expanding to that successor
         """
+        x,y=state[0]
+        exploredCorners=state[1]
+        adjacentNodes = set() 
+        allCorners = set(self.corners) 
 
-        successors = []
+        # Get Successors returns the Successors
+        # We need to check if the Successors are Corners if so update the ExploredCorners
+
         for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
-            # Add a successor state to the successor list if the action is legal
-            # Here's a code snippet for figuring out whether a new position hits a wall:
-            #   x,y = currentPosition
-            #   dx, dy = Actions.directionToVector(action)
-            #   nextx, nexty = int(x + dx), int(y + dy)
-            #   hitsWall = self.walls[nextx][nexty]
-
             "*** YOUR CODE HERE ***"
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty = int(x + dx), int(y + dy)
+            hitsWall = self.walls[nextx][nexty]
+            
+            # If u dont hit walls 
+            if hitsWall==False:
+                corners=list(exploredCorners)
+                # Initializing the adjacent node of the current node
+                nextNode=(nextx,nexty)
 
+                # Checking if the nextNode (i.e adjacent node) is a Corner 
+                # If nextNode is Corner that means one of the Corner is visited 
+                if nextNode in allCorners and nextNode not in corners:
+                    corners.append(nextNode)
+                adjacentNode=((nextNode,tuple(corners)),action,1)
+
+                # To update the Explored Corners we return the adjacentNodes 
+                adjacentNodes.add(adjacentNode)
         self._expanded += 1 # DO NOT CHANGE
-        return successors
+        return list(adjacentNodes)
 
     def getCostOfActions(self, actions):
         """
@@ -360,7 +396,49 @@ def cornersHeuristic(state, problem):
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    exploredCorners=state[1]
+    unExploredCorners=set()
+
+    # Everytime when CornerHeuristic is called we update the Unexplored Corners
+    unExploredCorners.update(set(corners).difference(set(exploredCorners)))
+
+    # Initializing the cost to zero of the current state  
+    totalCost=0
+    currentState=state[0]
+
+    # Corner Heuristic "RETURNS ZERO" (i.e Total Cost=0) when Goal state is reached 
+    # We Used Two heuristics Manhattan and Euclidean(Commented out)
+
+    # Pacman traverses the maze until there are not Corners left to visit (Goal state reached)
+    while True:
+        # Distance from currentNode to a corner
+        if len(unExploredCorners)==0:
+            break                                 
+        distance=[]
+        for unExploredCorner in unExploredCorners:
+            nodeCost=manhattanDistance(currentState,unExploredCorner)
+            distance.append([nodeCost,unExploredCorner])
+        
+        #Euclidean Distance
+        # for unExploredCorner in unExploredCorners:
+        #     nodeCost=euclideanDistance(currentState,unExploredCorner)
+        #     distance.append([nodeCost,unExploredCorner])
+
+        # We choose the nearest corner from current state
+        # We sort the distance list based on Cost (i.e Cost == Manhattan Distance|| Euclidean Distance)
+        distance.sort()
+        nearestCornerNode=distance[0][1]
+        costToCorner=distance[0][0]
+
+        # When Corner reached we remove it from the unExplored Corners
+        unExploredCorners.remove(nearestCornerNode)
+
+        # Initializing Current state to the corner visited ()
+        currentState=nearestCornerNode
+
+        # Returns the final Cost
+        totalCost+=costToCorner
+    return totalCost
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -454,7 +532,28 @@ def foodHeuristic(state, problem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
-    return 0
+    
+    # We initialize Food Coordinates in unExploredFoodList
+    unExploredFoodList = foodGrid.asList()
+
+    # We initialize Cost Array
+    totalCostList =set()
+
+    # We itterate through the Food Coordinates and find the Cost 
+    # Based on the predefined Function Maze Distance(i.e.Gives distance between two points using search functions we wrote)
+    for foodInList in unExploredFoodList:
+        maxCost=mazeDistance(position,foodInList,problem.startingGameState)
+    # We add each cost to totalCostList
+        totalCostList.add(maxCost)
+    # Length of totalCostList==0 means there is no food Node to reach 
+    # Goal State reached 
+    if len(totalCostList)==0:
+        return 0
+    # We return maximum cost in the totalCostList 
+    # This means in the current state space we are returning the max distance this indicates it tries to covers all food nodes in the space
+    # And it never Overestimates the cost
+    return max(totalCostList)
+
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
@@ -485,6 +584,8 @@ class ClosestDotSearchAgent(SearchAgent):
         problem = AnyFoodSearchProblem(gameState)
 
         "*** YOUR CODE HERE ***"
+        # BFS is the appropriate search function 
+        return bfs(problem)
         util.raiseNotDefined()
 
 class AnyFoodSearchProblem(PositionSearchProblem):
@@ -521,6 +622,8 @@ class AnyFoodSearchProblem(PositionSearchProblem):
         x,y = state
 
         "*** YOUR CODE HERE ***"
+        food=self.food.asList()
+        return state in food
         util.raiseNotDefined()
 
 def mazeDistance(point1, point2, gameState):

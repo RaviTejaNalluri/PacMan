@@ -73,30 +73,96 @@ def tinyMazeSearch(problem):
     return  [s, s, w, s, w, w, s, w]
 
 def depthFirstSearch(problem):
-    """
-    Search the deepest nodes in the search tree first.
+    # Starting Node
+    startNode=problem.getStartState()
+    if(problem.isGoalState(startNode)):
+        return []
+    stack = util.Stack()
+    
+    # visitedArray is to track the all the visited nodes so we dont traverse them again 
+    visitedArray=[]
+    
+    # Node and Direction gets pushed on to Stack 
+    # Direction list is maintained to keep track of the path from Start Node
+    stack.push((startNode,[]))
+    while not stack.isEmpty():
+        currentNode,directions=stack.pop()
+        if currentNode not in visitedArray:
+            # Appending the Visited Node to visitedArray list
+            visitedArray.append(currentNode)
 
-    Your search algorithm needs to return a list of actions that reaches the
-    goal. Make sure to implement a graph search algorithm.
-
-    To get started, you might want to try some of these simple commands to
-    understand the search problem that is being passed in:
-
-    print "Start:", problem.getStartState()
-    print "Is the start a goal?", problem.isGoalState(problem.getStartState())
-    print "Start's successors:", problem.getSuccessors(problem.getStartState())
-    """
-    "*** YOUR CODE HERE ***"
+            # If Current Node is Goal state we return Direction list from Start Node
+            if problem.isGoalState(currentNode):
+                return directions
+            # Traversing the Adjacency List which is equivalent to Successors list here 
+            for successorNode,direction,cost in problem.getSuccessors(currentNode):
+                nextDirection=directions[:]
+                nextDirection.append(direction)
+                stack.push((successorNode,nextDirection))
     util.raiseNotDefined()
 
 def breadthFirstSearch(problem):
-    """Search the shallowest nodes in the search tree first."""
-    "*** YOUR CODE HERE ***"
+    # Starting Node
+    startNode=problem.getStartState()
+    if(problem.isGoalState(startNode)):
+        return []
+    queue=util.Queue()
+
+    # visitedArray is to track the all the visited nodes so we dont traverse them again 
+    visitedArray=[]
+
+    # Node and Direction List gets pushed on to Queue 
+    # Direction list is maintained to keep track of the path from Start Node
+    queue.push((startNode,[]))
+
+    while not queue.isEmpty():
+        currentNode,directions=queue.pop()
+        if currentNode not in visitedArray:
+            # Appending the Visited Node to visitedArray list
+            visitedArray.append(currentNode)
+
+            # If Current Node is Goal state we return Direction list from Start Node
+            if problem.isGoalState(currentNode):
+                return directions
+            
+            # Traversing the Adjacency List which is equivalent to Successors list here 
+            for successorNode,direction,cost in problem.getSuccessors(currentNode):
+                nextDirection=directions[:]
+                nextDirection.append(direction)
+                queue.push((successorNode,nextDirection))
     util.raiseNotDefined()
 
 def uniformCostSearch(problem):
-    """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"
+    # Starting Node
+    startNode=problem.getStartState()
+    if problem.isGoalState(startNode):
+        return []
+    priorityQueue=util.PriorityQueue()
+
+    # visitedArray is to track the all the visited nodes so we dont traverse them again
+    visitedArray=[]
+
+    # priorityQueue implements minHeap 
+    # Node,Direction List and Cost gets pushed on to PriorityQueue along with priority
+    # Direction list is maintained to keep track of the path from Start Node
+    # Aggregate Cost is send to succcesor Nodes
+    priorityQueue.push((startNode,[],0),0)
+    while not priorityQueue.isEmpty():
+        currentNode,directions,cost=priorityQueue.pop()
+        if currentNode not in visitedArray:
+            # Appending the Visited Node to visitedArray list
+            visitedArray.append(currentNode)
+
+            # If Current Node is Goal state we return Direction list from Start Node
+            if problem.isGoalState(currentNode):
+                return directions
+            
+            # Traversing the Adjacency List which is equivalent to Successors list here
+            for successorNode,direction,successorCost in problem.getSuccessors(currentNode):
+                nodeCost=successorCost+cost
+                nextDirection=directions[:]
+                nextDirection.append(direction)
+                priorityQueue.push((successorNode,nextDirection,nodeCost),nodeCost)
     util.raiseNotDefined()
 
 def nullHeuristic(state, problem=None):
@@ -107,8 +173,37 @@ def nullHeuristic(state, problem=None):
     return 0
 
 def aStarSearch(problem, heuristic=nullHeuristic):
-    """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
+    # Starting Node
+    startNode=problem.getStartState()
+    if problem.isGoalState(startNode):
+        return []
+    priorityQueue=util.PriorityQueue()
+
+    # visitedArray is to track the all the visited nodes so we dont traverse them again
+    visitedArray=[]
+
+    # priorityQueue implements minHeap 
+    # Node,Direction List and Cost gets pushed on to PriorityQueue along with Heuristic value generated by Heuristic Function here
+    # Direction list is maintained to keep track of the path from Start Node
+    # Aggregate Cost is send to succcesor Nodes
+    priorityQueue.push((startNode,[],0),heuristic(startNode,problem))
+    while not priorityQueue.isEmpty():
+        currentNode,directions,cost=priorityQueue.pop()
+        if currentNode not in visitedArray:
+            # Appending the Visited Node to visitedArray list
+            visitedArray.append(currentNode)
+
+            # If Current Node is Goal state we return Direction list from Start Node
+            if problem.isGoalState(currentNode):
+                return directions
+            
+            # Traversing the Adjacency List which is equivalent to Successors list here
+            for successorNode,direction,successorCost in problem.getSuccessors(currentNode):
+                nodeCost=successorCost+cost
+                heuristicCost=nodeCost+heuristic(successorNode,problem)
+                nextDirection=directions[:]
+                nextDirection.append(direction)
+                priorityQueue.push((successorNode,nextDirection,nodeCost),heuristicCost)
     util.raiseNotDefined()
 
 
